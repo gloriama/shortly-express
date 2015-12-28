@@ -25,16 +25,19 @@ app.use(express.static(__dirname + '/public'));
 
 app.get('/', 
 function(req, res) {
-  res.render('index');
+  res.redirect('/login');
+  //res.render('index');
 });
 
 app.get('/create', 
 function(req, res) {
-  res.render('index');
+  //res.render('index');
+  res.redirect('/login');
 });
 
 app.get('/links', 
 function(req, res) {
+  //res.redirect('/login');
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
@@ -76,6 +79,9 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+app.get('/login', function(req, res) {
+  res.render('login');
+});
 
 
 /************************************************************/
