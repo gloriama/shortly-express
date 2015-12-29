@@ -117,31 +117,37 @@ app.get('/signup', function(req, res) {
 });
 
 app.post('/signup', function(req, res) {
-  console.log("received post signup");
   var username = req.body.username;
   var password = req.body.password;
-  bcrypt.hash(password, null, null, function(err, hash) {
-    if (err) {
-      console.log("error hashing password with bcrypt");
-      throw err;
-    }
-    db.knex('users')
-      .insert({ username: username,
-                password: hash })
-      .then(function() {
-        req.session.regenerate(function() {
-          req.session.user = username;
-          res.redirect('/');
+  bcrypt.genSalt(11, function(err, salt) {
+    bcrypt.hash(password, salt, null, function(err, hash) {
+      if (err) {
+        console.log("error hashing password with bcrypt");
+        throw err;
+      }
+      //query db.knex for username
+      //if exists, console log "username already exists", and then redirect to signup
+      //if DOESN'T exist, then insert:
+      db.knex('users')
+        .where('username', '=', username)
+        .then(function(queryRes) {
+          if (queryRes[0]) { // user with that username exists already
+            console.log("username already exists");
+            res.redirect('/signup');
+          } else { //user doesn't exist already
+            db.knex('users')
+              .insert({ username: username,
+                        password: hash })
+              .then(function() {
+                logInUser(req, res, username);
+              });
+          }
         });
-      });
-  })
+    });
+  });
 });
 
 app.post('/login', function(req, res) {
-  //check if username and password matches in the users table
-  //if yes, redirect to '/'
-  //else stay on login page
-  //res.render('signup');
   var username = req.body.username;
   var password = req.body.password;
   db.knex('users')
