@@ -28,7 +28,7 @@ app.use(session());
 
 app.use(express.static(__dirname + '/public'));
 
-var restrict = function(req, res, next) {
+var checkUser = function(req, res, next) {
   if (req.session.user) {
     console.log("user already logged in");
     next();
@@ -38,19 +38,19 @@ var restrict = function(req, res, next) {
   }
 };
 
-app.get('/', restrict,
+app.get('/', checkUser,
 function(req, res) {
   //res.redirect('/login');
   res.render('index');
 });
 
-app.get('/create', restrict,
+app.get('/create', checkUser,
 function(req, res) {
   res.render('index');
   //res.redirect('/login');
 });
 
-app.get('/links', restrict,
+app.get('/links', checkUser,
 function(req, res) {
   //res.redirect('/login');
   Links.reset().fetch().then(function(links) {

@@ -200,6 +200,7 @@ describe('', function() {
         });
       });
 
+      //should not pass anymore since login is required to view links page
       xit('Returns all of the links to display on the links page', function(done) {
         var options = {
           'method': 'GET',
