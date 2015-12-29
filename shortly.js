@@ -3,13 +3,15 @@ var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
 
-
 var db = require('./app/config');
 var Users = require('./app/collections/users');
 var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
+
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
 
 var app = express();
 
@@ -20,22 +22,35 @@ app.use(partials());
 app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(cookieParser('secret message'));
+app.use(session());
+
 app.use(express.static(__dirname + '/public'));
 
+var restrict = function(req, res, next) {
+  if (req.session.user) {
+    console.log("user already logged in");
+    next();
+  } else {
+    req.session.error = 'Access denied!';
+    res.redirect('/login');
+  }
+};
 
-app.get('/', 
+app.get('/', restrict,
 function(req, res) {
-  res.redirect('/login');
-  //res.render('index');
+  //res.redirect('/login');
+  res.render('index');
 });
 
-app.get('/create', 
+app.get('/create', restrict,
 function(req, res) {
-  //res.render('index');
-  res.redirect('/login');
+  res.render('index');
+  //res.redirect('/login');
 });
 
-app.get('/links', 
+app.get('/links', restrict,
 function(req, res) {
   //res.redirect('/login');
   Links.reset().fetch().then(function(links) {
@@ -83,6 +98,27 @@ app.get('/login', function(req, res) {
   res.render('login');
 });
 
+app.get('/signup', function(req, res) {
+  res.render('signup');
+});
+
+app.post('/signup', function(req, res) {
+  //save new user to database
+  console.log("received post signup");
+  db.knex('users')
+    .insert({ username: req.body['username'],
+              password: req.body['password'] })
+    .then(function() {
+      res.send(201);
+      console.log("done with response");
+    });
+  //respond with something?
+  // res.send(201);
+});
+
+// app.get('/signup', function(req, res) {
+  // res.render('signup');
+// });
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
