@@ -58,6 +58,10 @@ function(req, res) {
   });
 });
 
+//
+//
+//
+
 app.post('/links', 
 function(req, res) {
   var uri = req.body.url;
@@ -104,13 +108,17 @@ app.get('/signup', function(req, res) {
 
 app.post('/signup', function(req, res) {
   console.log("received post signup");
+  var username = req.body['username'];
   db.knex('users')
     .insert({ username: req.body['username'],
               password: req.body['password'] })
     .then(function() {
       //res.send(201);
       //console.log("done with response");
-      res.redirect('/');
+      req.session.regenerate(function() {
+        req.session.user = username;
+        res.redirect('/');
+      });
     });
 });
 
@@ -119,16 +127,26 @@ app.post('/login', function(req, res) {
   //if yes, redirect to '/'
   //else stay on login page
   //res.render('signup');
+  var username = req.body['username'];
   db.knex('users')
-    .where('username', '=',req.body['username'])
+    .where('username', '=', req.body['username'])
     .where('password', '=', req.body['password'])
     .then(function(queryRes){
       if (queryRes[0]){
-        res.redirect('/');
-      } else{
+        req.session.regenerate(function() {
+          req.session.user = username;
+          res.redirect('/');
+        });
+      } else {
         res.redirect('/login');
       }
     });
+});
+
+app.get('/logout', function(req, res) {
+  req.session.destroy(function() {
+    res.redirect('/');
+  });
 });
 
 /************************************************************/
