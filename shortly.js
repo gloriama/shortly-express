@@ -33,6 +33,8 @@ app.use(session( { //this hash removes deprecation warning
 
 app.use(express.static(__dirname + '/public'));
 
+//authentication helper: used as middleware for GET to '/', '/create', and '/links'
+//if user is logged in, allows request to continue; otherwise redirects to login
 var checkUser = function(req, res, next) {
   if (req.session.user) {
     console.log("user already logged in");
@@ -99,6 +101,13 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+var logInUser = function(req, res, username) {
+  req.session.regenerate(function() {
+    req.session.user = username;
+    res.redirect('/');
+  });
+};
+
 app.get('/login', function(req, res) {
   res.render('login');
 });
@@ -142,10 +151,7 @@ app.post('/login', function(req, res) {
         var hashedPassword = queryRes[0].password;
         bcrypt.compare(password, hashedPassword, function(err, compareRes) {
           if (compareRes === true) { //user is valid
-            req.session.regenerate(function() {
-              req.session.user = username;
-              res.redirect('/');
-            });
+            logInUser(req, res, username);
           } else { //user is invalid (given password was incorrect)
             console.log("invalid password");
             res.redirect('/login');
