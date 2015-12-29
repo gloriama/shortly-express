@@ -10,8 +10,10 @@ var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
+//authentication packages
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
+var bcrypt = require('bcrypt-nodejs');
 
 var app = express();
 
@@ -24,7 +26,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(cookieParser('secret message'));
-app.use(session( {
+app.use(session( { //this hash removes deprecation warning
   secret: 'topsecret',
   saveUninitialized: true,
   resave: true}));
@@ -60,10 +62,6 @@ function(req, res) {
     res.send(200, links.models);
   });
 });
-
-//
-//
-//
 
 app.post('/links', 
 function(req, res) {
@@ -111,18 +109,23 @@ app.get('/signup', function(req, res) {
 
 app.post('/signup', function(req, res) {
   console.log("received post signup");
-  var username = req.body['username'];
-  db.knex('users')
-    .insert({ username: req.body['username'],
-              password: req.body['password'] })
-    .then(function() {
-      //res.send(201);
-      //console.log("done with response");
-      req.session.regenerate(function() {
-        req.session.user = username;
-        res.redirect('/');
+  var username = req.body.username;
+  var password = req.body.password;
+  bcrypt.hash(password, null, null, function(err, hash) {
+    if (err) {
+      console.log("error hashing password with bcrypt");
+      throw err;
+    }
+    db.knex('users')
+      .insert({ username: username,
+                password: hash })
+      .then(function() {
+        req.session.regenerate(function() {
+          req.session.user = username;
+          res.redirect('/');
+        });
       });
-    });
+  })
 });
 
 app.post('/login', function(req, res) {
@@ -130,17 +133,26 @@ app.post('/login', function(req, res) {
   //if yes, redirect to '/'
   //else stay on login page
   //res.render('signup');
-  var username = req.body['username'];
+  var username = req.body.username;
+  var password = req.body.password;
   db.knex('users')
-    .where('username', '=', req.body['username'])
-    .where('password', '=', req.body['password'])
+    .where('username', '=', username)
     .then(function(queryRes){
       if (queryRes[0]){
-        req.session.regenerate(function() {
-          req.session.user = username;
-          res.redirect('/');
+        var hashedPassword = queryRes[0].password;
+        bcrypt.compare(password, hashedPassword, function(err, compareRes) {
+          if (compareRes === true) { //user is valid
+            req.session.regenerate(function() {
+              req.session.user = username;
+              res.redirect('/');
+            });
+          } else { //user is invalid (given password was incorrect)
+            console.log("invalid password");
+            res.redirect('/login');
+          }
         });
-      } else {
+      } else { //user is invalid (username doesn't exist in db)
+        console.log("username doesn't exist in db");
         res.redirect('/login');
       }
     });

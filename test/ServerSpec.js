@@ -40,10 +40,10 @@ describe('', function() {
       .del()
       .catch(function(error) {
         // uncomment when writing authentication tests
-        // throw {
-        //   type: 'DatabaseError',
-        //   message: 'Failed to create test setup data'
-        // };
+         throw {
+           type: 'DatabaseError',
+           message: 'Failed to create test setup data'
+         };
       });
 
     // delete user Phillip from db so it can be created later for the test
