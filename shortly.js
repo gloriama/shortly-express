@@ -24,7 +24,10 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(cookieParser('secret message'));
-app.use(session());
+app.use(session( {
+  secret: 'topsecret',
+  saveUninitialized: true,
+  resave: true}));
 
 app.use(express.static(__dirname + '/public'));
 
