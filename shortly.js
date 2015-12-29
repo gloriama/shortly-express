@@ -103,22 +103,33 @@ app.get('/signup', function(req, res) {
 });
 
 app.post('/signup', function(req, res) {
-  //save new user to database
   console.log("received post signup");
   db.knex('users')
     .insert({ username: req.body['username'],
               password: req.body['password'] })
     .then(function() {
-      res.send(201);
-      console.log("done with response");
+      //res.send(201);
+      //console.log("done with response");
+      res.redirect('/');
     });
-  //respond with something?
-  // res.send(201);
 });
 
-// app.get('/signup', function(req, res) {
-  // res.render('signup');
-// });
+app.post('/login', function(req, res) {
+  //check if username and password matches in the users table
+  //if yes, redirect to '/'
+  //else stay on login page
+  //res.render('signup');
+  db.knex('users')
+    .where('username', '=',req.body['username'])
+    .where('password', '=', req.body['password'])
+    .then(function(queryRes){
+      if (queryRes[0]){
+        res.redirect('/');
+      } else{
+        res.redirect('/login');
+      }
+    });
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
